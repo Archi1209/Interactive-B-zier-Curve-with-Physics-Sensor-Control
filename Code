@@ -33,26 +33,36 @@
   <div class="hint">Move your mouse — Bézier rope reacts</div>
 
   <script>
-   
+  
 
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
 
-    function resize() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    resize();
-    window.addEventListener("resize", resize);
-
+ 
     const P0 = { x: 100, y: canvas.height / 2 };
     const P3 = { x: canvas.width - 100, y: canvas.height / 2 };
 
     const P1 = { x: canvas.width / 3, y: canvas.height / 2, vx: 0, vy: 0 };
     const P2 = { x: (2 * canvas.width) / 3, y: canvas.height / 2, vx: 0, vy: 0 };
 
-   
-    const k = 0.08;       
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      P0.x = 100;
+      P0.y = canvas.height / 2;
+      P3.x = canvas.width - 100;
+      P3.y = canvas.height / 2;
+      P1.x = canvas.width / 3;
+      P1.y = canvas.height / 2;
+      P2.x = (2 * canvas.width) / 3;
+      P2.y = canvas.height / 2;
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    
+
+    const k = 0.08;       // stiffness
     const damping = 0.85;
 
     function updateSpring(point, targetX, targetY) {
@@ -66,6 +76,7 @@
       point.y += point.vy;
     }
 
+   
 
     const mouse = { x: canvas.width / 2, y: canvas.height / 2 };
 
@@ -74,7 +85,7 @@
       mouse.y = e.clientY;
     });
 
-
+    
 
     function bezierPoint(t, P0, P1, P2, P3) {
       const u = 1 - t;
@@ -106,7 +117,7 @@
       };
     }
 
-    
+   
 
     function drawPoint(p, color) {
       ctx.beginPath();
@@ -115,16 +126,16 @@
       ctx.fill();
     }
 
-
+    
 
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      
+      // Update physics
       updateSpring(P1, mouse.x, mouse.y);
-      updateSpring(P2, mouse.x, mouse.y);
+      updateSpring(P2, P3.x, P3.y);
 
-      
+      // Draw Bézier curve
       ctx.beginPath();
       for (let t = 0; t <= 1; t += 0.01) {
         const p = bezierPoint(t, P0, P1, P2, P3);
@@ -134,7 +145,7 @@
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      
+      // Draw tangents
       for (let t = 0; t <= 1; t += 0.1) {
         const p = bezierPoint(t, P0, P1, P2, P3);
         const tan = bezierTangent(t, P0, P1, P2, P3);
@@ -150,7 +161,7 @@
         ctx.stroke();
       }
 
-      
+      // Draw control points
       drawPoint(P0, "#ffffff");
       drawPoint(P3, "#ffffff");
       drawPoint(P1, "#ffcc00");
@@ -163,3 +174,4 @@
   </script>
 </body>
 </html>
+
