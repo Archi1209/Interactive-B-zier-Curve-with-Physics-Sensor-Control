@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Interactive Bézier Rope</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: #0f0f14;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #aaa;
+      font-family: monospace;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+  <div class="hint">Move your mouse — Bézier rope reacts</div>
+
+  <script>
+   
+
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    const P0 = { x: 100, y: canvas.height / 2 };
+    const P3 = { x: canvas.width - 100, y: canvas.height / 2 };
+
+    const P1 = { x: canvas.width / 3, y: canvas.height / 2, vx: 0, vy: 0 };
+    const P2 = { x: (2 * canvas.width) / 3, y: canvas.height / 2, vx: 0, vy: 0 };
+
+   
+    const k = 0.08;       
+    const damping = 0.85;
+
+    function updateSpring(point, targetX, targetY) {
+      const ax = -k * (point.x - targetX);
+      const ay = -k * (point.y - targetY);
+
+      point.vx = (point.vx + ax) * damping;
+      point.vy = (point.vy + ay) * damping;
+
+      point.x += point.vx;
+      point.y += point.vy;
+    }
+
+
+    const mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+
+    canvas.addEventListener("mousemove", (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+
+
+
+    function bezierPoint(t, P0, P1, P2, P3) {
+      const u = 1 - t;
+      return {
+        x:
+          u * u * u * P0.x +
+          3 * u * u * t * P1.x +
+          3 * u * t * t * P2.x +
+          t * t * t * P3.x,
+        y:
+          u * u * u * P0.y +
+          3 * u * u * t * P1.y +
+          3 * u * t * t * P2.y +
+          t * t * t * P3.y,
+      };
+    }
+
+    function bezierTangent(t, P0, P1, P2, P3) {
+      const u = 1 - t;
+      return {
+        x:
+          3 * u * u * (P1.x - P0.x) +
+          6 * u * t * (P2.x - P1.x) +
+          3 * t * t * (P3.x - P2.x),
+        y:
+          3 * u * u * (P1.y - P0.y) +
+          6 * u * t * (P2.y - P1.y) +
+          3 * t * t * (P3.y - P2.y),
+      };
+    }
+
+    
+
+    function drawPoint(p, color) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      
+      updateSpring(P1, mouse.x, mouse.y);
+      updateSpring(P2, mouse.x, mouse.y);
+
+      
+      ctx.beginPath();
+      for (let t = 0; t <= 1; t += 0.01) {
+        const p = bezierPoint(t, P0, P1, P2, P3);
+        t === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+      }
+      ctx.strokeStyle = "#00ffff";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      
+      for (let t = 0; t <= 1; t += 0.1) {
+        const p = bezierPoint(t, P0, P1, P2, P3);
+        const tan = bezierTangent(t, P0, P1, P2, P3);
+
+        const mag = Math.hypot(tan.x, tan.y);
+        const nx = tan.x / mag;
+        const ny = tan.y / mag;
+
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x + nx * 30, p.y + ny * 30);
+        ctx.strokeStyle = "#ff0066";
+        ctx.stroke();
+      }
+
+      
+      drawPoint(P0, "#ffffff");
+      drawPoint(P3, "#ffffff");
+      drawPoint(P1, "#ffcc00");
+      drawPoint(P2, "#ffcc00");
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
